@@ -5,6 +5,7 @@ from typing import Optional
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import (
+    QCheckBox,
     QGridLayout,
     QHBoxLayout,
     QLabel,
@@ -28,6 +29,7 @@ class ControlsPanel(QWidget):
         params_changed: TTL, timeout, packet size or interval was edited.
         max_points_changed(int): The number of graph points was edited.
         alert_changed(int): The alert threshold was edited.
+        notifications_changed(bool): The notifications checkbox was toggled.
     """
 
     start_requested = pyqtSignal()
@@ -38,6 +40,7 @@ class ControlsPanel(QWidget):
     params_changed = pyqtSignal()
     max_points_changed = pyqtSignal(int)
     alert_changed = pyqtSignal(int)
+    notifications_changed = pyqtSignal(bool)
 
     def __init__(self, config: AppConfig, parent: Optional[QWidget] = None) -> None:
         """Create the panel.
@@ -58,6 +61,9 @@ class ControlsPanel(QWidget):
         self.points_input = self._number_input(config.max_points)
         self.alert_input = self._number_input(config.alert_ms, 0, 10000)
         self.alert_input.setToolTip("Notify when latency exceeds this; 0 disables")
+        self.notify_check = QCheckBox("Notifications")
+        self.notify_check.setToolTip("Show alerts as tray notifications")
+        self.notify_check.setChecked(config.notifications)
 
         self.apply_btn = QPushButton("Apply")
         self.start_btn = QPushButton("Start")
@@ -167,6 +173,7 @@ class ControlsPanel(QWidget):
             self._row(
                 ("Graph points:", self.points_input),
                 ("Alert above (ms):", self.alert_input),
+                extra=self.notify_check,
             ),
             3,
             0,
@@ -175,11 +182,15 @@ class ControlsPanel(QWidget):
         )
 
     @staticmethod
-    def _row(*fields: tuple[str, QLineEdit]) -> QHBoxLayout:
+    def _row(
+        *fields: tuple[str, QLineEdit], extra: Optional[QWidget] = None
+    ) -> QHBoxLayout:
         row = QHBoxLayout()
         for caption, field in fields:
             row.addWidget(QLabel(caption))
             row.addWidget(field)
+        if extra is not None:
+            row.addWidget(extra)
         row.addStretch()
         return row
 
@@ -199,6 +210,7 @@ class ControlsPanel(QWidget):
             field.textChanged.connect(self._on_param_text_changed)
         self.points_input.textChanged.connect(self._on_points_text_changed)
         self.alert_input.textChanged.connect(self._on_alert_text_changed)
+        self.notify_check.toggled.connect(self.notifications_changed)
 
     def _on_param_text_changed(self, text: str) -> None:
         if text:

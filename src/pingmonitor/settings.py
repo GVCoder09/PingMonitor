@@ -37,6 +37,8 @@ class AppConfig:
         max_points: Number of measurements shown on the graph.
         alert_ms: Latency in milliseconds above which an alert is raised;
             0 disables the latency alert.
+        notifications: Whether alerts are shown as tray notifications. The
+            tray icon badge is shown regardless.
         mini_opacity: Opacity of the mini window, from 0.1 to 1.0.
     """
 
@@ -44,6 +46,7 @@ class AppConfig:
     ping: PingSettings = field(default_factory=PingSettings)
     max_points: int = DEFAULT_MAX_POINTS
     alert_ms: int = 0
+    notifications: bool = True
     mini_opacity: float = 1.0
 
 

@@ -35,7 +35,6 @@ bindings are installed.
   (`Args:`, `Returns:`, ...). `ruff` enforces this.
 - Keep the logic (`stats`, `settings`, `monitor`) independent of the widgets in
   `pingmonitor/ui`, and cover new logic with tests.
-- Add a line to `CHANGELOG.md` for every user-visible change.
 
 ## Building a standalone executable
 

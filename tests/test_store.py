@@ -22,6 +22,7 @@ def test_roundtrip(store):
         ping=PingSettings(ttl=10, timeout=2, size=64, interval=5),
         max_points=40,
         alert_ms=120,
+        notifications=False,
         mini_opacity=0.5,
     )
     store.save(config)

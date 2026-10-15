@@ -263,3 +263,35 @@ def test_first_host_keeps_the_classic_palette():
     assert series_color(0) == QColor("red")
     assert MEAN_COLOR == QColor("green")  # matplotlib's "green" is #008000
     assert len({series_color(i).name() for i in range(8)}) == 8
+
+
+def test_notifications_can_be_turned_off(window):
+    window._reset_hosts(("a.test",))
+    window._controls.notify_check.setChecked(False)
+    assert window._notifications is False
+    with patch.object(window._tray, "showMessage") as notify:
+        for _ in range(3):
+            window._on_ping_result("a.test", None)
+    assert not notify.called
+    assert window._tray_alerting  # the badge is not a notification
+
+
+def test_flapping_connection_notifies_once(window):
+    window._reset_hosts(("a.test",))
+    window._tray.show()
+    with patch.object(window._tray, "showMessage") as notify:
+        for _ in range(4):  # down (3 losses), then back up, repeatedly
+            for _ in range(3):
+                window._on_ping_result("a.test", None)
+            window._on_ping_result("a.test", 5.0)
+    # one "down" and one "back online"; later flaps fall in the cooldown
+    assert notify.call_count == (2 if window._tray.isVisible() else 0)
+
+
+def test_notifications_setting_is_persisted(qtbot, store):
+    win = PingWindow(store)
+    qtbot.addWidget(win)
+    win._controls.notify_check.setChecked(False)
+    win.close()
+    win._monitor.shutdown()
+    assert store.load().notifications is False

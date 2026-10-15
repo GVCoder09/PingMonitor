@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from pingmonitor.alerts import Alert, AlertKind, AlertTracker
+from pingmonitor.alerts import Alert, AlertKind, AlertThrottle, AlertTracker
 from pingmonitor.history import HistoryLog
 from pingmonitor.hostcheck import HostChecker
 from pingmonitor.monitor import PingMonitor
@@ -75,12 +75,14 @@ class PingWindow(QMainWindow):
         self._ping_settings = config.ping
         self._max_points = config.max_points
         self._alert_ms = config.alert_ms
+        self._notifications = config.notifications
         self._mini_opacity = config.mini_opacity
 
         self._stats: dict[str, PingStats] = {}
         self._last_latency: dict[str, Optional[float]] = {}
         self._history = HistoryLog()
         self._alerts = AlertTracker()
+        self._throttle = AlertThrottle()
         self._monitor = PingMonitor(self)
         self._checker = HostChecker(self)
         self._pending_start = False
@@ -189,6 +191,7 @@ class PingWindow(QMainWindow):
         c.params_changed.connect(self._apply_params)
         c.max_points_changed.connect(self._on_max_points_changed)
         c.alert_changed.connect(self._on_alert_changed)
+        c.notifications_changed.connect(self._on_notifications_changed)
         self._monitor.result.connect(self._on_ping_result)
         self._monitor.failed.connect(self._on_monitor_failed)
         self._checker.finished.connect(self._on_hosts_checked)
@@ -203,6 +206,7 @@ class PingWindow(QMainWindow):
         self._stats = {host: PingStats() for host in hosts}
         self._last_latency = {}
         self._alerts.reset()
+        self._throttle.reset()
         self._plot.set_hosts(hosts)
         self._stats_panel.set_hosts(hosts)
         self._mini.reset()
@@ -287,6 +291,8 @@ class PingWindow(QMainWindow):
     # --- alerts and tray ----------------------------------------------
 
     def _notify(self, alert: Alert) -> None:
+        if not self._notifications or not self._throttle.allow(alert):
+            return
         if alert.kind is AlertKind.DOWN:
             text, icon = f"{alert.host} is not responding", QSystemTrayIcon.Warning
         elif alert.kind is AlertKind.UP:
@@ -333,6 +339,10 @@ class PingWindow(QMainWindow):
         self._plot.set_alert_ms(alert_ms)
         self._save_config()
 
+    def _on_notifications_changed(self, enabled: bool) -> None:
+        self._notifications = enabled
+        self._save_config()
+
     def _set_opacity(self, opacity: float) -> None:
         self._mini_opacity = opacity
         self._mini.set_opacity(opacity)
@@ -348,6 +358,7 @@ class PingWindow(QMainWindow):
                 ping=self._ping_settings,
                 max_points=self._max_points,
                 alert_ms=self._alert_ms,
+                notifications=self._notifications,
                 mini_opacity=self._mini_opacity,
             )
         )

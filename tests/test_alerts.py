@@ -1,4 +1,10 @@
-from pingmonitor.alerts import LOSS_STREAK, AlertKind, AlertTracker
+from pingmonitor.alerts import (
+    LOSS_STREAK,
+    Alert,
+    AlertKind,
+    AlertThrottle,
+    AlertTracker,
+)
 
 
 def feed(tracker, values, threshold=0):
@@ -53,3 +59,58 @@ def test_hosts_are_independent_and_reset_clears():
     assert not tracker.is_alerting("b")
     tracker.reset()
     assert not tracker.is_alerting("a")
+
+
+class FakeClock:
+    def __init__(self):
+        self.now = 1000.0
+
+    def __call__(self):
+        return self.now
+
+
+def test_throttle_suppresses_repeats_within_cooldown():
+    clock = FakeClock()
+    throttle = AlertThrottle(cooldown=60, clock=clock)
+    slow = Alert("h", AlertKind.SLOW, 200.0)
+    assert throttle.allow(slow)
+    clock.now += 59
+    assert not throttle.allow(slow)
+    clock.now += 2
+    assert throttle.allow(slow)
+
+
+def test_throttle_is_per_host_and_kind():
+    throttle = AlertThrottle(cooldown=60, clock=FakeClock())
+    assert throttle.allow(Alert("a", AlertKind.SLOW, 1.0))
+    assert throttle.allow(Alert("b", AlertKind.SLOW, 1.0))
+    assert throttle.allow(Alert("a", AlertKind.DOWN))
+
+
+def test_throttle_reports_recovery_only_after_an_announced_outage():
+    clock = FakeClock()
+    throttle = AlertThrottle(cooldown=60, clock=clock)
+    up = Alert("h", AlertKind.UP, 5.0)
+    assert not throttle.allow(up)  # never announced as down
+    assert throttle.allow(Alert("h", AlertKind.DOWN))
+    assert throttle.allow(up)
+    assert not throttle.allow(up)  # already reported
+
+
+def test_throttle_silences_a_flapping_connection():
+    clock = FakeClock()
+    throttle = AlertThrottle(cooldown=60, clock=clock)
+    shown = 0
+    for _ in range(10):  # down, up, down, up ... every 5 seconds
+        shown += throttle.allow(Alert("h", AlertKind.DOWN))
+        clock.now += 5
+        shown += throttle.allow(Alert("h", AlertKind.UP, 5.0))
+        clock.now += 5
+    assert shown == 4  # a down/up pair at t=0 and another at t=60
+
+
+def test_throttle_reset():
+    throttle = AlertThrottle(cooldown=60, clock=FakeClock())
+    assert throttle.allow(Alert("h", AlertKind.DOWN))
+    throttle.reset()
+    assert throttle.allow(Alert("h", AlertKind.DOWN))

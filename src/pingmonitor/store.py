@@ -40,6 +40,7 @@ class SettingsStore:
             ping=ping,
             max_points=max(1, self._get("max_points", defaults.max_points, int)),
             alert_ms=max(0, self._get("alert_ms", defaults.alert_ms, int)),
+            notifications=self._get("notifications", defaults.notifications, bool),
             mini_opacity=min(1.0, max(0.1, opacity)),
         )
 
@@ -56,6 +57,7 @@ class SettingsStore:
         self._q.setValue("interval", config.ping.interval)
         self._q.setValue("max_points", config.max_points)
         self._q.setValue("alert_ms", config.alert_ms)
+        self._q.setValue("notifications", config.notifications)
         self._q.setValue("mini_opacity", config.mini_opacity)
         self._q.sync()
 

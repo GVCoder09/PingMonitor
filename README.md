@@ -54,7 +54,7 @@ stays on top of your game, call or stream and never gets in the way of the mouse
 | **Live graph** | Last N measurements per host, a dashed mean line, red markers for lost packets and an optional alert-threshold line. |
 | **Multi-host** | Up to 8 hosts, comma-separated. Unreachable hosts are reported and skipped. |
 | **Rich statistics** | Sent, received, loss, min, avg, max, **jitter**, **median** and **95th percentile** per host. |
-| **Alerts** | Notification when a host stops answering (3 lost packets in a row), comes back, or exceeds your latency threshold. The tray icon shows a red badge while something is wrong. |
+| **Alerts** | Notification when a host stops answering (3 lost packets in a row), comes back, or exceeds your latency threshold. Repeats are throttled (one per host and kind per minute) and everything can be switched off with the **Notifications** checkbox. The tray icon shows a red badge while something is wrong. |
 | **Three modes** | Full window, compact always-on-top window, and a click-through mini overlay. |
 | **Export** | Full history to CSV, graph to PNG. |
 | **Tunable ping** | TTL, timeout, packet size and interval, changed on the fly. |
@@ -132,6 +132,7 @@ python -m pingmonitor
 | Interval (s) | Time between two pings of the same host | 1 |
 | Graph points | Measurements shown on the graph | 15 |
 | Alert above (ms) | Notify when latency exceeds this value; `0` disables | 0 |
+| Notifications | Show alerts as tray notifications (the red badge on the tray icon stays) | on |
 
 TTL, timeout, size and interval apply immediately, without restarting. Changing
 the hosts needs **Apply** (or **Start**).
@@ -244,7 +245,6 @@ tests/
 ## Contributing
 
 Bug reports and pull requests are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md).
-Notable changes are listed in the [changelog](CHANGELOG.md).
 
 If PingMonitor is useful to you, consider giving it a star on GitHub.
 
