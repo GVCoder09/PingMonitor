@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pingmonitor"
+dynamic = ["version"]
+description = "Desktop multi-host ping monitor with a live graph, alerts and a tiny click-through overlay"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["ping", "network", "monitor", "latency", "pyqt5"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: X11 Applications :: Qt",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: System :: Networking :: Monitoring",
+]
+dependencies = [
+    "PyQt5>=5.15",
+    "ping3>=4.0",
+]
+
+[project.optional-dependencies]
+dev = ["ruff", "pytest", "pytest-qt"]
+build = ["pyinstaller>=6"]
+
+[project.urls]
+Homepage = "https://github.com/GVCoder09/PingMonitor"
+Issues = "https://github.com/GVCoder09/PingMonitor/issues"
+
+[project.gui-scripts]
+pingmonitor = "pingmonitor.__main__:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "pingmonitor.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+pingmonitor = ["resources/*.png", "resources/*.ico", "resources/*.icns"]
+
+[tool.ruff]
+line-length = 88
+src = ["src"]
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]
+
+[tool.pytest.ini_options]
+qt_api = "pyqt5"
+testpaths = ["tests"]
+pythonpath = ["src"]
